@@ -8,7 +8,10 @@ import {
   ContactSection,
 } from './components/Sections'
 
-// ─── Loading screen ───────────────────────────────────────────────────────────
+// Detect mobile
+const isMobile = /Mobi|Android/i.test(navigator.userAgent)
+
+// ─── Loading screen ───────────────────────────────────────────
 function LoadingScreen({ visible }) {
   return (
     <div
@@ -36,20 +39,21 @@ function LoadingScreen({ visible }) {
         alignItems: 'center',
         gap: '10px',
       }}>
-        <span style={{ width: 8, height: 8, background: '#1a56db', borderRadius: '50%', display: 'inline-block' }} />
+        <span style={{ width: 8, height: 8, background: '#1a56db', borderRadius: '50%' }} />
         DriveWell
       </div>
       <div className="loading-spinner" />
-      <p style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '0.82rem', color: '#718096', fontWeight: 300 }}>
+      <p style={{ fontSize: '0.82rem', color: '#718096' }}>
         Loading your experience…
       </p>
     </div>
   )
 }
 
-// ─── Scroll progress indicator ────────────────────────────────────────────────
-function ScrollProgress({ scrollRef }) {
+// ─── Scroll progress ──────────────────────────────────────────
+function ScrollProgress() {
   const barRef = useRef(null)
+
   useEffect(() => {
     const onScroll = () => {
       if (!barRef.current) return
@@ -57,13 +61,18 @@ function ScrollProgress({ scrollRef }) {
       const pct = total > 0 ? (window.scrollY / total) * 100 : 0
       barRef.current.style.width = pct + '%'
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
   return (
     <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0,
-      height: '3px', zIndex: 200,
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '3px',
+      zIndex: 200,
       background: 'rgba(26,86,219,0.08)',
     }}>
       <div
@@ -72,30 +81,26 @@ function ScrollProgress({ scrollRef }) {
           height: '100%',
           width: '0%',
           background: 'linear-gradient(90deg, #1a56db, #60a5fa)',
-          transition: 'width 0.1s linear',
         }}
       />
     </div>
   )
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
+// ─── Main App ─────────────────────────────────────────────────
 export default function App() {
-  // scrollProgress is a ref (not state) to avoid re-renders in the 3D scene
   const scrollProgress = useRef(0)
   const [loading, setLoading] = useState(true)
 
-  // Track scroll progress (normalized 0 → 1)
   useEffect(() => {
     const onScroll = () => {
       const total = document.documentElement.scrollHeight - window.innerHeight
       scrollProgress.current = total > 0 ? window.scrollY / total : 0
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Hide loading screen after a brief delay (enough for Suspense + fonts)
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 1400)
     return () => clearTimeout(t)
@@ -103,18 +108,15 @@ export default function App() {
 
   return (
     <>
-      <LoadingScreen visible={loading} />
+      {/* Hide loading on mobile */}
+      {!isMobile && <LoadingScreen visible={loading} />}
 
-      {/* Fixed 3D Canvas overlay — pointer-events disabled so HTML is still scrollable */}
-      <Scene scrollProgress={scrollProgress} />
+      {/* Hide 3D car on mobile */}
+      {!isMobile && <Scene scrollProgress={scrollProgress} />}
 
-      {/* Scroll progress bar */}
       <ScrollProgress />
-
-      {/* Fixed navigation */}
       <Navbar />
 
-      {/* Scrollable page content */}
       <main style={{ position: 'relative', zIndex: 1 }}>
         <HeroSection />
         <CoursesSection />
